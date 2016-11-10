@@ -3,6 +3,10 @@
 var WHITE_ICON = './images/icon-white.svg';
 var GRAY_ICON = './images/icon-gray.svg';
 
+var SCORE_CARD_BLACK_ICON = './images/score-card-black.svg';
+var SCORE_CARD_GRAY_ICON = './images/score-card-gray.svg';
+var SCORE_CARD_WHITE_ICON = './images/score-card-white.svg';
+
 var parkMap = {
   acad: 'Acadia National Park',
   arch: 'Arches National Park',
@@ -28,13 +32,13 @@ var getBadges = function(t){
     var lowercaseName = cardName.toLowerCase();
     if(lowercaseName.indexOf('green') > -1){
       badgeColor = 'green';
-      icon = WHITE_ICON;
+      icon = SCORE_CARD_WHITE_ICON;
     } else if(lowercaseName.indexOf('yellow') > -1){
       badgeColor = 'yellow';
-      icon = WHITE_ICON;
+      icon = SCORE_CARD_WHITE_ICON;
     } else if(lowercaseName.indexOf('red') > -1){
       badgeColor = 'red';
-      icon = WHITE_ICON;
+      icon = SCORE_CARD_WHITE_ICON;
     }
 
     if(lowercaseName.indexOf('dynamic') > -1){
@@ -84,7 +88,7 @@ var boardButtonCallback = function(t){
     title: 'Popup List Example',
     items: [
       {
-        text: 'Open Overlay',
+        text: 'Settings',
         callback: function(t){
           return t.overlay({
             url: './overlay.html',
@@ -112,29 +116,29 @@ var boardButtonCallback = function(t){
 };
 
 var cardButtonCallback = function(t){
-  var items = Object.keys(parkMap).map(function(parkCode){
-    var urlForCode = 'http://www.nps.gov/' + parkCode + '/';
-    return {
-      text: parkMap[parkCode],
-      url: urlForCode,
-      callback: function(t){
-        return t.attach({ url: urlForCode, name: parkMap[parkCode] })
-        .then(function(){
-          return t.closePopup();
-        })
-      }
-    };
-  });
+  // var items = Object.keys(parkMap).map(function(parkCode){
+  //   var urlForCode = 'http://www.nps.gov/' + parkCode + '/';
+  //   return {
+  //     text: parkMap[parkCode],
+  //     url: urlForCode,
+  //     callback: function(t){
+  //       return t.attach({ url: urlForCode, name: parkMap[parkCode] })
+  //       .then(function(){
+  //         return t.closePopup();
+  //       })
+  //     }
+  //   };
+  // });
+
 
   return t.popup({
-    title: 'Popup Search Example',
-    items: items,
-    search: {
-      count: 5,
-      placeholder: 'Search National Parks',
-      empty: 'No parks found'
-    }
+    title: "Score Card",
+    url: './score-card-button.html',
+    height: 400
   });
+  // .then(function(){
+  //   return t.closePopup();
+  // });
 };
 
 TrelloPowerUp.initialize({
@@ -191,18 +195,44 @@ TrelloPowerUp.initialize({
   },
   'board-buttons': function(t, options){
     return [{
-      icon: WHITE_ICON,
-      text: 'Template',
+      icon: SCORE_CARD_BLACK_ICON,
+      text: 'Score Cards',
       callback: boardButtonCallback
     }];
   },
-  'card-badges': function(t, options){
-    return getBadges(t);
+  'card-badges': function(t, card){
+    return t.get('card', 'shared', 'value', null)
+    .then(function(value){
+      if (!value) {
+        return {};
+      }
+      if (typeof value != "object") {
+        console.log("Invalid value type (" + typeof value + "): " + value);
+        return {};
+      }
+      return t.get('organization', 'shared', 'values').then(function(values){
+        var allValues = true;
+        var sum = 0.0;
+        for (var key in values) {
+          if (key in value) {
+            sum += value[key] * values[key].weight;
+          } else {
+            allValues = false;
+          }
+        }
+        return {
+          text: (sum / Object.keys(values).length).toFixed(1).toString(),
+          icon: SCORE_CARD_WHITE_ICON, // for card front badges only
+          color: allValues ? 'green' : 'red'
+        };
+
+      });
+    });
   },
   'card-buttons': function(t, options) {
     return [{
-      icon: GRAY_ICON,
-      text: 'Template',
+      icon: SCORE_CARD_GRAY_ICON,
+      text: 'Score Card',
       callback: cardButtonCallback
     }];
   },
@@ -224,7 +254,7 @@ TrelloPowerUp.initialize({
     var parkName = formatNPSUrl(t, options.url);
     if(parkName){
       return {
-        icon: GRAY_ICON,
+        icon: SCORE_CARD_GRAY_ICON,
         text: parkName
       };
     } else {
